@@ -22,7 +22,10 @@ var MonkeyPivotal = {
 	
 	bind_elements: function(){
 		$('#start_update_current').click(function(event){
-			MonkeyPivotal.start_update_current_document();
+			MonkeyPivotal.start_update_document(false);
+		});
+		$('#start_update_new').click(function(event){
+			MonkeyPivotal.start_update_document(true);
 		});
 	},
 	
@@ -96,16 +99,17 @@ var MonkeyPivotal = {
 		$('#control_buttons_box').hide();
 	},
 	
-	start_update_current_document: function(){
+	start_update_document: function(in_new){
 		if (this.gdoc != null && this.gmatches.length > 0){
 			this.loading_message('Processing links...');
 			this.global_counter = 0;
+			this.update_local_doc(in_new);
 		} else {
 		        this.show_message('Document doesn\'t contain pivotal links :(', 'warning');
 		}
 	},
 	
-	update_local_doc: function(){
+	update_local_doc: function(is_new){
 		if (this.gmatches[this.global_counter]){
 			this.update_loading_message('Processing links. Done ' + this.global_counter + ' from ' + this.gmatches.length);
 			var temp_match = this.gmatches[this.global_counter];
@@ -116,38 +120,106 @@ var MonkeyPivotal = {
 				var r_restore = new RegExp("(href=\")https:\\/\\/www.pivotaltracker.com\\/story\\/show\\/" + pivotal_ids[1] + "([\\s]?)(\\([\\w\\s]+\\))?", "gi");
 				MonkeyPivotal.gdoc = MonkeyPivotal.gdoc.replace(r_restore, 'href="https://www.pivotaltracker.com/story/show/' + pivotal_ids[1]);
 				MonkeyPivotal.global_counter++;
-				MonkeyPivotal.update_local_doc();
+				MonkeyPivotal.update_local_doc(is_new);
 			});
 		} else {
-			this.update_loading_message("Updating document...", 'notice');
-			this.update_gdocument();
+			if (is_new){
+				this.update_loading_message("Creating new document...", 'notice');
+				this.create_gdocument();
+			} else {
+				this.update_loading_message("Updating document...", 'notice');
+				this.update_gdocument();
+			}
 		}
+	},
+
+	create_gdocument: function(){
+		var params = {
+	    	'method': 'POST',
+	    	'headers': {
+	      		'GData-Version': '3.0',
+	      		'Content-Type': 'multipart/related; boundary=END_OF_PART',
+			'Slug': 'Monkey Patch'
+	    	},
+		'parameters': {'alt': 'json'},
+	    	'body': this.construct_new_content_body('monkey_' + new Date().getTime())
+	  	};
+
+	  	var url = this.bg_page.DOCLIST_FEED;
+	  	this.bg_page.oauth.sendSignedRequest(url, MonkeyPivotal.handle_upload_success, params);
 	},
 	
 	update_gdocument: function(){
+		var etag = 'MsgA' + new Date().getTime();
 		var params = {
 	    	'method': 'PUT',
 	    	'headers': {
 	      		'GData-Version': '3.0',
 	      		'Content-Type': 'multipart/related; boundary=END_OF_PART',
-	      		'If-Match': '*'
+	      		'If-Match': '*',
+			'Slug': 'Monkey Patch'
 	    	},
-	    	'body': this.construct_content_body()
+		'parameters': {'alt': 'json'},
+	    	'body': this.construct_update_content_body(etag)
 	  	};
 
-	  	var url = 'https://docs.google.com/feeds/default/media/document%3A' + this.doc_key;
-	  	this.bg_page.oauth.sendSignedRequest(url, this.handle_upload_success, params);
+	  	var url = this.bg_page.DOCLIST_FEED + this.doc_key;
+	  	this.bg_page.oauth.sendSignedRequest(url, MonkeyPivotal.handle_upload_success, params);
 	},
 	
 	handle_upload_success: function(response, xhr){
-		this.show_message(response, 'notice');
-		this.hide_buttons();
+		var data = null;
+		try {
+			data = JSON.parse(response);
+		} catch(err) {
+			data = null;
+		}
+		if (data == null){
+			MonkeyPivotal.show_message('Done. Thanks for all :)', 'notice');
+		} else if (data.entry && data.entry.title && data.entry.link && MonkeyPivotal.get_gdoc_link(data.entry.link, 'alternate') != null) {
+			MonkeyPivotal.show_message('New document created. <a href="'+ MonkeyPivotal.get_gdoc_link(data.entry.link, 'alternate').href +'" target="_blank">' + data.entry.title.$t + '</a>', 'notice');
+		} else {
+			MonkeyPivotal.show_message('Done. Thanks for all :)', 'notice');
+		}
+		MonkeyPivotal.hide_buttons();
 	},
-	
-	construct_content_body: function(){
+
+	get_gdoc_link: function(links, rel){
+		for (var i = 0, link; link = links[i]; ++i) {
+    			if (link.rel === rel) {
+      				return link;
+    			}
+  		}
+  		return null;
+	},
+
+	construct_update_content_body: function(etag){
 		var body = ['--END_OF_PART\r\n',
 	              'Content-Type: application/atom+xml;\r\n\r\n',
-	              this.construct_header_body(), '\r\n',
+	              this.construct_update_header_body(etag), '\r\n',
+	              '--END_OF_PART\r\n',
+	              'Content-Type: text/html\r\n\r\n',
+	              this.gdoc, '\r\n',
+	              '--END_OF_PART--\r\n'].join('');
+	  return body;
+	},
+
+	construct_update_header_body: function(etag){
+		var atom = ["<?xml version='1.0' encoding='UTF-8'?>", 
+	              '<entry xmlns="http://www.w3.org/2005/Atom"', 
+		      ' xmlns:gd="http://schemas.google.com/g/2005"',
+		      ' gd:etag="', etag, '">',
+	              '<category scheme="http://schemas.google.com/g/2005#kind"', 
+	              ' term="http://schemas.google.com/docs/2007#document"/>',
+	              '',
+	              '</entry>'].join('');
+	  return atom;
+	},
+	
+	construct_new_content_body: function(title){
+		var body = ['--END_OF_PART\r\n',
+	              'Content-Type: application/atom+xml;\r\n\r\n',
+	              this.construct_new_header_body(title), '\r\n',
 	              '--END_OF_PART\r\n',
 	              'Content-Type: text/html\r\n\r\n',
 	              this.gdoc, '\r\n',
@@ -155,16 +227,14 @@ var MonkeyPivotal = {
 	  return body;
 	},
 	
-	construct_header_body: function(){
-		var starCat = ['<category scheme="http://schemas.google.com/g/2005/labels" ',
-	                 'term="http://schemas.google.com/g/2005/labels#starred" ',
-	                 'label="starred"/>'].join('');
+	construct_new_header_body: function(title){
+		var doc_title = title || null;
 
 	  var atom = ["<?xml version='1.0' encoding='UTF-8'?>", 
 	              '<entry xmlns="http://www.w3.org/2005/Atom">',
 	              '<category scheme="http://schemas.google.com/g/2005#kind"', 
 	              ' term="http://schemas.google.com/docs/2007#document"/>',
-	              '',
+	              doc_title ? '<title>' + doc_title + '</title>' : '',
 	              '</entry>'].join('');
 	  return atom;
 	},
