@@ -1,5 +1,4 @@
 var MonkeyPivotal = {
-	current_tab_url: null,
 	bg_page: null,
 	doc_key: null,
 	gdoc: null,
@@ -11,56 +10,46 @@ var MonkeyPivotal = {
 	
 	init: function(){
 		this.bg_page = chrome.extension.getBackgroundPage();
-		this.auth_check();
 		this.bind_elements();
-		this.init_analyze_document();
+		this.auth_check();		
 	},
 	
 	auth_check: function(){
 		this.bg_page.oauth.authorize(function() {
-		  MonkeyPivotal.schedule_request();
+		  MonkeyPivotal.init_analyze_document();
 		});
 	},
 	
 	bind_elements: function(){
-		$('#begin_analyze').click(function(event){
-			MonkeyPivotal.begin_analyze();
-		});
 		$('#start_update').click(function(event){
 			MonkeyPivotal.start_update_document();
 		});
 	},
 	
 	init_analyze_document: function(){
-		chrome.tabs.getSelected(null,function(tab) {
-		    MonkeyPivotal.current_tab_url = tab.url;
+		chrome.windows.getCurrent(function(w) {
+			chrome.tabs.getSelected(w.id, function(tab){	
+				MonkeyPivotal.begin_analyze(tab.url);
+			});
 		});
 	},
 	
-	schedule_request: function() {
-		if (this.bg_page.oauth.hasToken()) {
-			$('#monkey_box').show();
-		} else {
-			this.show_message('Please, authorize app.');
-		}
-	},
-	
-	begin_analyze: function(){
-		if (this.current_tab_url != null){
+	begin_analyze: function(current_tab_url){
+		if (current_tab_url != null){
 			var regex_pattern = /^(http|https):\/\/([\w\.\/]+)\/document\/d\/([\w\.\-\_]+)\/(.*)/i;
-			if (regex_pattern.test(this.current_tab_url)){
-				var found_str = this.current_tab_url.match(regex_pattern);
+			if (regex_pattern.test(current_tab_url)){
+				var found_str = current_tab_url.match(regex_pattern);
 				if (found_str[3]){
 					this.doc_key = found_str[3];
 					this.download_gdocument(this.doc_key);
 				} else {
-					this.show_message('Please, go to google document');
+					this.show_message('Please, open google document', 'notice');
 				}
 			} else {
-				this.show_message('Please, go to google document');
+				this.show_message('Please, open google document', 'notice');
 			}
 		} else {
-			this.show_message('Please, go to google document');
+			this.show_message('Please, open google document', 'notice');
 		}
 	},
 	
@@ -75,15 +64,15 @@ var MonkeyPivotal = {
 		this.gdoc = response;
 		var count_links = this.gdoc.match(this.pivotal_regex_g).length;
 		if (count_links > 0){
-			this.show_message('Found ' + count_links + ' link(s).');
-			this.show_start_button();
+			this.show_message('Found ' + count_links + ' link(s).', 'notice');
+			this.show_buttons();
 		} else {
-			this.show_message('Document doesn\'t have pivotal links.');
+			this.show_message('Document doesn\'t have pivotal links.', 'notice');
 		}
 	},
 	
-	show_start_button: function(){
-		$('#start_update').show();
+	show_buttons: function(){
+		$('#control_buttons_box').show();
 	},
 	
 	start_update_document: function(){
@@ -92,7 +81,7 @@ var MonkeyPivotal = {
 			this.global_counter = 0;
 			this.update_local_doc();
 		} else {
-			this.show_message('Analyze doc before.');
+		        this.show_message('Analyze doc before.', 'notice');
 		}
 	},
 	
@@ -101,15 +90,15 @@ var MonkeyPivotal = {
 			var temp_match = this.gmatches[this.global_counter];
 			var pivotal_ids = temp_match.match(this.pivotal_regex);
 			$.getJSON('http://monkey.railsware.com/pivotal_story_status/' + pivotal_ids[1] + '.json', function(data) {
-				if (data.story_status != 'unknown'){
-					var r = new RegExp("https:\\/\\/www.pivotaltracker.com\\/story\\/show\\/" + pivotal_ids[1] + "([\\s]?)(\\([\\w\\s]+\\))?", "gi");
-					MonkeyPivotal.gdoc = MonkeyPivotal.gdoc.replace(r, 'https://www.pivotaltracker.com/story/show/' + pivotal_ids[1] + ' (' + data.story_status + ')');
-				}
+				var r = new RegExp("https:\\/\\/www.pivotaltracker.com\\/story\\/show\\/" + pivotal_ids[1] + "([\\s]?)(\\([\\w\\s]+\\))?", "gi");
+				MonkeyPivotal.gdoc = MonkeyPivotal.gdoc.replace(r, 'https://www.pivotaltracker.com/story/show/' + pivotal_ids[1] + ' (' + data.story_status + ')');
+				var r_restore = new RegExp("(href=\")https:\\/\\/www.pivotaltracker.com\\/story\\/show\\/" + pivotal_ids[1] + "([\\s]?)(\\([\\w\\s]+\\))?", "gi");
+				MonkeyPivotal.gdoc = MonkeyPivotal.gdoc.replace(r_restore, 'href="https://www.pivotaltracker.com/story/show/' + pivotal_ids[1]);
 				MonkeyPivotal.global_counter++;
 				MonkeyPivotal.update_local_doc();
 			});
 		} else {
-			this.show_message("Done. Updating doc.");
+			this.show_message("Done. Updating doc.", 'notice');
 			this.update_gdocument();
 		}
 	},
@@ -122,7 +111,7 @@ var MonkeyPivotal = {
 	      'Content-Type': 'multipart/related; boundary=END_OF_PART',
 	      'If-Match': '*'
 	    },
-			'parameters': {'alt': 'json'},
+	    'parameters': {'alt': 'json'},
 	    'body': this.construct_content_body()
 	  };
 
@@ -131,7 +120,7 @@ var MonkeyPivotal = {
 	},
 	
 	handle_upload_success: function(response){
-		this.show_message(response);
+		this.show_message('Done', 'notice');
 	},
 	
 	construct_content_body: function(){
@@ -159,8 +148,14 @@ var MonkeyPivotal = {
 	  return atom;
 	},
 	
-	show_message: function(msg){
-		$('#messages').html(msg);
+	show_message: function(msg, msg_type){
+		$('#flash_messages .msg').html(msg);
+		$('#flash_messages .message').removeClass('error warning notice').addClass(msg_type);
+		$('#flash_messages').show();
+	},
+
+	hide_message: function(){
+		$('#flash_messages').hide();
 	}
 	
 };
