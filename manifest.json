@@ -5,15 +5,21 @@
   "background_page": "background.html",
   "options_page": "options.html",
   "browser_action": {
-    "default_icon": "icon.png",
     "default_title": "Monkey Pivotal",
+    "default_icon": "48.png",
     "popup": "popup.html"
+  },
+  "icons": { 
+    "16": "16.png",
+    "48": "48.png",
+    "128": "128.png" 
   },
   "permissions": [
     "tabs",
     "https://docs.google.com/feeds/*",
     "https://www.google.com/accounts/OAuthGetRequestToken",
     "https://www.google.com/accounts/OAuthAuthorizeToken",
-    "https://www.google.com/accounts/OAuthGetAccessToken"
+    "https://www.google.com/accounts/OAuthGetAccessToken",
+    "https://monkey.railsware.com/*"
   ]
 }
