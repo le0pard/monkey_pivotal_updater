@@ -127,7 +127,11 @@ var MonkeyPivotal = {
 	  };
 
 	  var url = this.bg_page.DOCLIST_FEED + this.doc_key;
-	  this.bg_page.oauth.sendSignedRequest(url, this.show_message, params);
+	  this.bg_page.oauth.sendSignedRequest(url, this.handle_upload_success, params);
+	},
+	
+	handle_upload_success: function(response){
+		this.show_message(response);
 	},
 	
 	construct_content_body: function(){
