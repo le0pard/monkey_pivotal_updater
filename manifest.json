@@ -1,0 +1,19 @@
+{
+  "name": "Monkey Pivotal",
+  "version": "1.0",
+  "description": "Monkey Pivotal update statuses pivotal links in google documents",
+  "background_page": "background.html",
+  "options_page": "options.html",
+  "browser_action": {
+    "default_icon": "icon.png",
+    "default_title": "Monkey Pivotal",
+    "popup": "popup.html"
+  },
+  "permissions": [
+    "tabs",
+    "https://docs.google.com/feeds/*",
+    "https://www.google.com/accounts/OAuthGetRequestToken",
+    "https://www.google.com/accounts/OAuthAuthorizeToken",
+    "https://www.google.com/accounts/OAuthGetAccessToken"
+  ]
+}
