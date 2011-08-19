@@ -94,7 +94,7 @@ var MonkeyPivotalBackground = {
 		var data = null;
 		var msg = 'Done. Thanks for all :)';
 		var n_msg = msg;
-		var is_show_notifications = localStorage.is_show_notifications;
+		var is_show_notifications = localStorage.is_show_notifications || 1;
 		
 		try {
 			data = JSON.parse(response);
@@ -112,7 +112,7 @@ var MonkeyPivotalBackground = {
 			msg = 'Done. Thanks for all :)';
 		}
 		MonkeyPivotalBackground.show_notice_message_on_popup(msg);
-		if (is_show_notifications == 1){
+		if (1 == is_show_notifications){
 			MonkeyPivotalBackground.show_notification(n_msg);
 		}
 		chrome.browserAction.setBadgeText({'text': ""});

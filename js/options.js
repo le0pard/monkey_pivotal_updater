@@ -9,7 +9,7 @@ var MonkeyPivotalOptions = {
 
 		var is_notification = localStorage.is_show_notifications || 1;
 		
-        	if (is_notification == 1) {
+        	if (1 == is_notification) {
           		$('#show_notification').attr("checked", "checked");
         	} else {
            		$('#show_notification').removeAttr('checked');
