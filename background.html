@@ -10,13 +10,10 @@
   <head>
     <script type="text/javascript" src="js/chrome_ex_oauthsimple.js"></script>
     <script type="text/javascript" src="js/chrome_ex_oauth.js"></script>
+    <script type="text/javascript" src="js/jquery-1.6.2.min.js"></script>
     <script type="text/javascript">
       var DOCLIST_SCOPE = 'https://docs.google.com/feeds';
       var DOCLIST_FEED = DOCLIST_SCOPE + '/default/private/full/';
-      var docs = []; // In memory cache for the user's entire doclist.
-      var refreshRate = localStorage.refreshRate || 300; // 5 min default.
-      var pollIntervalMin = 1000 * refreshRate;
-      var requests = [];
 
       var oauth = ChromeExOAuth.initBackgroundPage({
         'request_url': 'https://www.google.com/accounts/OAuthGetRequestToken',
@@ -28,33 +25,12 @@
         'app_name': 'Monkey Pivotal'
       });
 
-      function setIcon(opt_badgeObj) {
-        if (opt_badgeObj) {
-          var badgeOpts = {};
-          if (opt_badgeObj && opt_badgeObj.text != undefined) {
-            badgeOpts['text'] = opt_badgeObj.text;
-          }
-          if (opt_badgeObj && opt_badgeObj.tabId) {
-            badgeOpts['tabId'] = opt_badgeObj.tabId;
-          }
-          chrome.browserAction.setBadgeText(badgeOpts);
-        }
-      };
-
-      function clearPendingRequests() {
-        for (var i = 0, req; req = requests[i]; ++i) {
-          window.clearTimeout(req);
-        }
-        requests = [];
-      };
-
       function logout() {
-        docs = [];
-        setIcon({'text': ''});
+        chrome.browserAction.setBadgeText({'text': ''});
         oauth.clearTokens();
-        clearPendingRequests();
       };
     </script>
+    <script type="text/javascript" src="js/monkey_pivotal_background.js"></script>
   </head>
   <body>
   </body>
