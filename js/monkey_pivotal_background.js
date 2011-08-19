@@ -8,7 +8,6 @@ var MonkeyPivotalBackground = {
 	pivotal_regex: /https:\/\/www.pivotaltracker.com\/story\/show\/([\d]+)/i,
 	
 	update_message_on_popup: function(msg){
-		console.log(msg);
 		chrome.extension.sendRequest({loading_message: msg}, function(response) {
 			//console.log(response.loading_message);
 		});
@@ -113,7 +112,7 @@ var MonkeyPivotalBackground = {
 			msg = 'Done. Thanks for all :)';
 		}
 		MonkeyPivotalBackground.show_notice_message_on_popup(msg);
-		if (is_show_notifications == 'true'){
+		if (is_show_notifications == 1){
 			MonkeyPivotalBackground.show_notification(n_msg);
 		}
 		chrome.browserAction.setBadgeText({'text': ""});
