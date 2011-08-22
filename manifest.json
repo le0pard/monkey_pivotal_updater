@@ -1,6 +1,6 @@
 {
   "name": "Monkey Pivotal",
-  "version": "1.1",
+  "version": "1.2",
   "description": "Monkey Pivotal update statuses pivotal links in google documents",
   "background_page": "background.html",
   "options_page": "options.html",
