@@ -34,6 +34,9 @@ var MonkeyPivotal = {
 		    } else if (request.notice_message){
 		      MonkeyPivotal.show_message(request.notice_message, 'notice');
 		      sendResponse({notice_message: "ok"});
+        } else if (request.error_message){
+		      MonkeyPivotal.show_message(request.error_message, 'error');
+		      sendResponse({error_message: "ok"});
 		    } else if (request.hide_popup_buttons){
                       MonkeyPivotal.hide_buttons();
                       sendResponse({hide_popup_buttons: "ok"});
@@ -75,7 +78,9 @@ var MonkeyPivotal = {
 		var url = 'https://docs.google.com/feeds/download/documents/export/Export?id=' + key;
 		$.get(url, function(data){ 
 			MonkeyPivotal.handle_dowload_success(data);
-		});
+		}).error(function(jqXHR, textStatus, errorThrown) { 
+			MonkeyPivotal.show_message('Error loadign document! Debug: ' + textStatus, 'error');
+    });
 	},
 	
 	handle_dowload_success: function(response){
@@ -119,7 +124,7 @@ var MonkeyPivotal = {
 			this.bg_page.MonkeyPivotalBackground.update_local_doc(in_new);
 			this.hide_buttons();
 		} else {
-		        this.show_message('Document doesn\'t contain pivotal links :(', 'warning');
+		  this.show_message('Document doesn\'t contain pivotal links :(', 'warning');
 		}
 	},
 	
@@ -133,7 +138,7 @@ var MonkeyPivotal = {
 		$('#flash_messages').hide();
 	},
         
-        loading_message: function(msg){
+  loading_message: function(msg){
 		this.hide_message();
 		$('#flash_messages .msg').html(msg);
 		$('#flash_messages .message').removeClass('error warning notice').addClass('loading');
