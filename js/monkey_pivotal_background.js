@@ -102,14 +102,14 @@ var MonkeyPivotalBackground = {
 			data = null;
 		}
 		if (data == null){
-			msg = 'Done. Thanks for all :)';
+			msg = 'Done. Thanks for all :) For debug: ' + response;
 		} else if (data.entry && data.entry.title && data.entry.link && MonkeyPivotalBackground.get_gdoc_link(data.entry.link, 'alternate') != null) {
 			msg = 'All done. <a href="'+ MonkeyPivotalBackground.get_gdoc_link(data.entry.link, 'alternate').href +'" target="_blank">' + data.entry.title.$t + '</a>';
 			if (is_show_notifications){
 				n_msg = 'All done. Name: ' +  data.entry.title.$t + ', Link: ' + MonkeyPivotalBackground.get_gdoc_link(data.entry.link, 'alternate').href;
 			}
 		} else {
-			msg = 'Done. Thanks for all :)';
+			msg = 'Done. Thanks for all :) For debug: ' + response;
 		}
 		MonkeyPivotalBackground.show_notice_message_on_popup(msg);
 		if (1 == is_show_notifications){
