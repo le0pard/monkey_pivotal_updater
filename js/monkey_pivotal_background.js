@@ -7,7 +7,7 @@ var MonkeyPivotalBackground = {
 
   /* 400 KB */
   MAX_DOC_LENGTH: 524288,
-  RESUMABLE_CHUNK: 524288,
+  RESUMABLE_CHUNK: 262144,
   resumable_url: null,
   resumable_length: 0,
 
@@ -141,6 +141,8 @@ var MonkeyPivotalBackground = {
 		MonkeyPivotalBackground.gmatches = [];
 		MonkeyPivotalBackground.doc_key = null;
 		MonkeyPivotalBackground.gdoc = null;
+		MonkeyPivotalBackground.resumable_length = 0;
+		MonkeyPivotalBackground.resumable_url = null;
 		MonkeyPivotalBackground.is_started = false;
 	},
 
@@ -220,7 +222,7 @@ var MonkeyPivotalBackground = {
             'X-Upload-Content-Type': 'text/html',
             'X-Upload-Content-Length': this.gdoc.length
 	    	},
-		    'parameters': {'alt': 'json', 'convert': 'false'}
+		    'parameters': {'alt': 'json'}
 	  	};
 
 	  	var url = DOCLIST_SCOPE + '/upload/create-session/default/private/full';
@@ -249,16 +251,14 @@ var MonkeyPivotalBackground = {
     }
 
     MonkeyPivotalBackground.resumable_length = last_data_length;
-
-    console.log(init_data_length + '-' + (last_data_length - 1) + '/' + MonkeyPivotalBackground.gdoc.length);
-    console.log(MonkeyPivotalBackground.gdoc.substring(init_data_length, last_data_length).length);
-    console.log(MonkeyPivotalBackground.gdoc.substring(init_data_length, init_data_length+2));
-    console.log(MonkeyPivotalBackground.gdoc.substring(last_data_length - 1, last_data_length + 2));
-
+    
+    MonkeyPivotalBackground.update_message_on_popup("Creating doc: " + last_data_length + "/" + MonkeyPivotalBackground.gdoc.length);
+    
     $.ajax({
       type: 'PUT',
       url: MonkeyPivotalBackground.resumable_url,
-      context: MonkeyPivotalBackground.gdoc.substring(init_data_length, last_data_length),
+      data: MonkeyPivotalBackground.gdoc.substring(init_data_length, last_data_length),
+      contentType: 'text/html',
       headers: {
         'GData-Version': '3.0',
     		'Content-Type': 'text/html',
@@ -280,6 +280,8 @@ var MonkeyPivotalBackground = {
       } else {
         MonkeyPivotalBackground.handle_upload_success(response, xhr);
       }
+    } else if (200 == xhr.status || 201 == xhr.status){
+      MonkeyPivotalBackground.handle_upload_success(response, xhr);
     } else {
       MonkeyPivotalBackground.show_error_message_on_popup('Error creating document. Sorry :(');
     }
