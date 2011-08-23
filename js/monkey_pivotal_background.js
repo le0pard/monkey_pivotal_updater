@@ -226,10 +226,10 @@ var MonkeyPivotalBackground = {
 	  	};
 
 	  	var url = DOCLIST_SCOPE + '/upload/create-session/default/private/full';
-	  	oauth.sendSignedRequest(url, MonkeyPivotalBackground.handle_create_resumable_gdocument, params);
+	  	oauth.sendSignedRequest(url, MonkeyPivotalBackground.handle_update_resumable_gdocument, params);
   },
   
-  handle_create_resumable_gdocument: function(response, xhr){
+  handle_update_resumable_gdocument: function(response, xhr){
     if (4 == xhr.readyState && 200 == xhr.status){
       if (xhr.getResponseHeader('location')){
         MonkeyPivotalBackground.resumable_url = xhr.getResponseHeader('location');
@@ -252,7 +252,7 @@ var MonkeyPivotalBackground = {
 
     MonkeyPivotalBackground.resumable_length = last_data_length;
     
-    MonkeyPivotalBackground.update_message_on_popup("Creating doc: " + last_data_length + "/" + MonkeyPivotalBackground.gdoc.length);
+    MonkeyPivotalBackground.update_message_on_popup("Uploading doc: " + last_data_length + "/" + MonkeyPivotalBackground.gdoc.length);
     
     $.ajax({
       type: 'PUT',
@@ -280,7 +280,7 @@ var MonkeyPivotalBackground = {
       } else {
         MonkeyPivotalBackground.handle_upload_success(response, xhr);
       }
-    } else if (200 == xhr.status || 201 == xhr.status){
+    } else if (200 == xhr.status || 201 == xhr.status || 400 == xhr.status){
       MonkeyPivotalBackground.handle_upload_success(response, xhr);
     } else {
       MonkeyPivotalBackground.show_error_message_on_popup('Error creating document. Sorry :(');
@@ -290,7 +290,21 @@ var MonkeyPivotalBackground = {
 
 
   update_by_resumable_gdocument: function(){
-    
+		var params = {
+	    	'method': 'PUT',
+	    	'headers': {
+	      		'GData-Version': '3.0',
+	      		'Content-Type': 'text/html',
+	      		'If-Match': '*',
+			      'Slug': 'Monkey Patch',
+			      'X-Upload-Content-Type': 'text/html',
+            'X-Upload-Content-Length': this.gdoc.length
+	    	},
+		    'parameters': {'alt': 'json'}
+	  	};
+
+	  	var url = DOCLIST_SCOPE + '/upload/create-session/default/private/full/' + this.doc_key;
+	  	oauth.sendSignedRequest(url, MonkeyPivotalBackground.handle_update_resumable_gdocument, params);
   }
 };
 
