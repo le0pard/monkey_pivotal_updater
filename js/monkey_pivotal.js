@@ -121,7 +121,7 @@ var MonkeyPivotal = {
 	start_update_document: function(in_new){
 		if (this.bg_page.MonkeyPivotalBackground.gdoc != null && this.bg_page.MonkeyPivotalBackground.gmatches.length > 0){
 			this.loading_message('Processing links...');
-			this.bg_page.MonkeyPivotalBackground.update_local_doc(in_new);
+			this.bg_page.MonkeyPivotalBackground.update_doc_iteration(in_new);
 			this.hide_buttons();
 		} else {
 		  this.show_message('Document doesn\'t contain pivotal links :(', 'warning');

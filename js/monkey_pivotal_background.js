@@ -5,8 +5,8 @@ var MonkeyPivotalBackground = {
 	global_counter: 0,
 	gmatches: [],
 
-  /* 400 KB */
-  MAX_DOC_LENGTH: 524288,
+  /* 256 KB */
+  MAX_DOC_LENGTH: 262144,
   RESUMABLE_CHUNK: 262144,
   resumable_url: null,
   resumable_length: 0,
@@ -17,7 +17,6 @@ var MonkeyPivotalBackground = {
 		chrome.extension.sendRequest({loading_message: msg}, function(response) {
 			//console.log(response.loading_message);
 		});
-		this.update_icon_counter();
 	},
 
 	update_icon_counter: function(){
@@ -43,9 +42,10 @@ var MonkeyPivotalBackground = {
 		});
 	},
 
-	update_local_doc: function(is_new){
+	update_doc_iteration: function(is_new){
 		MonkeyPivotalBackground.is_started = true;
 		if (this.gmatches[this.global_counter]){
+		  this.update_icon_counter();
 			this.update_message_on_popup('Processing links. Done ' + this.global_counter + ' from ' + this.gmatches.length);
 			var temp_match = this.gmatches[this.global_counter];
 			var pivotal_ids = temp_match.match(this.pivotal_regex);
@@ -55,20 +55,21 @@ var MonkeyPivotalBackground = {
 				var r_restore = new RegExp("(href=\")https:\\/\\/www.pivotaltracker.com\\/story\\/show\\/" + pivotal_ids[1] + "([\\s]?)(\\([\\w\\s]+\\))?", "gi");
 				MonkeyPivotalBackground.gdoc = MonkeyPivotalBackground.gdoc.replace(r_restore, 'href="https://www.pivotaltracker.com/story/show/' + pivotal_ids[1]);
 				MonkeyPivotalBackground.global_counter++;
-				MonkeyPivotalBackground.update_local_doc(is_new);
+				MonkeyPivotalBackground.update_doc_iteration(is_new);
 			});
 		} else {
+		  chrome.browserAction.setBadgeText({'text': "..."});
 			if (is_new){
 				this.update_message_on_popup("Creating new document...");
 				if (MonkeyPivotalBackground.gdoc.length >= MonkeyPivotalBackground.MAX_DOC_LENGTH){
-				  this.create_by_resumable_gdocument();
+				  this.create_resumable_gdocument();
 				} else {
           this.create_gdocument();
 				}
 			} else {
 				this.update_message_on_popup("Updating document...");
         if (MonkeyPivotalBackground.gdoc.length >= MonkeyPivotalBackground.MAX_DOC_LENGTH){
-				  this.update_by_resumable_gdocument();
+				  this.update_resumable_gdocument();
 				} else {
           this.update_gdocument();
 				}
@@ -133,9 +134,13 @@ var MonkeyPivotalBackground = {
 		}
 		MonkeyPivotalBackground.show_notice_message_on_popup(msg);
 		if (1 == is_show_notifications){
-			MonkeyPivotalBackground.show_notification(n_msg);
+			MonkeyPivotalBackground.show_notification('Work done!', n_msg);
 		}
-		chrome.browserAction.setBadgeText({'text': ""});
+		MonkeyPivotalBackground.clear_variables();
+	},
+	
+	clear_variables: function(){
+	  chrome.browserAction.setBadgeText({'text': ""});
 		/* clear variables */
 		MonkeyPivotalBackground.global_counter = 0;
 		MonkeyPivotalBackground.gmatches = [];
@@ -155,10 +160,10 @@ var MonkeyPivotalBackground = {
   		return null;
 	},
 
-	show_notification: function(msg){
+	show_notification: function(title, msg){
 		var notification = webkitNotifications.createNotification(
       			'img/icon48.png',
-      			'Work done!',
+      			title,
       			msg
     		);
     		notification.show();
@@ -212,7 +217,7 @@ var MonkeyPivotalBackground = {
 
 
   /* resumable protocol */
-  create_by_resumable_gdocument: function(){
+  create_resumable_gdocument: function(){
     var params = {
 	    	'method': 'POST',
 	    	'headers': {
@@ -226,10 +231,28 @@ var MonkeyPivotalBackground = {
 	  	};
 
 	  	var url = DOCLIST_SCOPE + '/upload/create-session/default/private/full';
-	  	oauth.sendSignedRequest(url, MonkeyPivotalBackground.handle_update_resumable_gdocument, params);
+	  	oauth.sendSignedRequest(url, MonkeyPivotalBackground.handle_resumable_gdocument, params);
   },
   
-  handle_update_resumable_gdocument: function(response, xhr){
+  update_resumable_gdocument: function(){
+		var params = {
+	    	'method': 'PUT',
+	    	'headers': {
+	      		'GData-Version': '3.0',
+	      		'Content-Type': 'text/html',
+	      		'If-Match': '*',
+			      'Slug': 'Monkey Patch',
+			      'X-Upload-Content-Type': 'text/html',
+            'X-Upload-Content-Length': this.gdoc.length
+	    	},
+		    'parameters': {'alt': 'json'}
+	  	};
+
+	  	var url = DOCLIST_SCOPE + '/upload/create-session/default/private/full/' + this.doc_key;
+	  	oauth.sendSignedRequest(url, MonkeyPivotalBackground.handle_resumable_gdocument, params);
+  },
+  
+  handle_resumable_gdocument: function(response, xhr){
     if (4 == xhr.readyState && 200 == xhr.status){
       if (xhr.getResponseHeader('location')){
         MonkeyPivotalBackground.resumable_url = xhr.getResponseHeader('location');
@@ -237,9 +260,11 @@ var MonkeyPivotalBackground = {
         MonkeyPivotalBackground.upload_resumable_document();
       } else {
         MonkeyPivotalBackground.show_error_message_on_popup('Error creating document. Sorry :(');
+        MonkeyPivotalBackground.clear_variables();
       }
     } else {
       MonkeyPivotalBackground.show_error_message_on_popup('Error creating document. Sorry :(');
+      MonkeyPivotalBackground.clear_variables();
     }
   },
 
@@ -284,28 +309,11 @@ var MonkeyPivotalBackground = {
       MonkeyPivotalBackground.handle_upload_success(response, xhr);
     } else {
       MonkeyPivotalBackground.show_error_message_on_popup('Error creating document. Sorry :(');
+      MonkeyPivotalBackground.clear_variables();
     }
-  },
-
-
-
-  update_by_resumable_gdocument: function(){
-		var params = {
-	    	'method': 'PUT',
-	    	'headers': {
-	      		'GData-Version': '3.0',
-	      		'Content-Type': 'text/html',
-	      		'If-Match': '*',
-			      'Slug': 'Monkey Patch',
-			      'X-Upload-Content-Type': 'text/html',
-            'X-Upload-Content-Length': this.gdoc.length
-	    	},
-		    'parameters': {'alt': 'json'}
-	  	};
-
-	  	var url = DOCLIST_SCOPE + '/upload/create-session/default/private/full/' + this.doc_key;
-	  	oauth.sendSignedRequest(url, MonkeyPivotalBackground.handle_update_resumable_gdocument, params);
   }
+  
+  
 };
 
 
