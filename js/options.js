@@ -27,6 +27,12 @@ var MonkeyPivotalOptions = {
 				localStorage.is_show_notifications = 0;
 			}
 		});
+		
+		$('#pivotal_token').change(function(){
+		  localStorage.pivotal_token = $(this).val();
+		});
+		$('#pivotal_token').val(localStorage.pivotal_token);
+		
 	},
 	
 

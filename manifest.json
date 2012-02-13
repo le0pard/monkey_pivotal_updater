@@ -1,6 +1,6 @@
 {
   "name": "Monkey Pivotal",
-  "version": "1.4",
+  "version": "1.5",
   "description": "Monkey Pivotal update statuses pivotal links in google documents",
   "background_page": "background.html",
   "options_page": "options.html",
@@ -17,10 +17,8 @@
   "permissions": [
     "tabs",
     "notifications",
-    "https://docs.google.com/feeds/*",
-    "https://www.google.com/accounts/OAuthGetRequestToken",
-    "https://www.google.com/accounts/OAuthAuthorizeToken",
-    "https://www.google.com/accounts/OAuthGetAccessToken",
-    "https://monkey.railsware.com/*"
+    "unlimitedStorage",
+    "http://*/*",
+    "https://*/*"
   ]
 }

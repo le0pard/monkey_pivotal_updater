@@ -49,18 +49,37 @@ var MonkeyPivotalBackground = {
 			this.update_message_on_popup('Processing links. Done ' + this.global_counter + ' from ' + this.gmatches.length);
 			var temp_match = this.gmatches[this.global_counter];
 			var pivotal_ids = temp_match.match(this.pivotal_regex);
+			
+			$.ajax({
+			  timeout: 60000,
+			  dataType: 'xml',
+			  crossDomain: true,
+        url: 'https://www.pivotaltracker.com/services/v4/stories/' + pivotal_ids[1],
+        headers: {
+          "X-TrackerToken": localStorage.pivotal_token
+        },
+        success: function(xml){
+          var r = new RegExp("https:\\/\\/www.pivotaltracker.com\\/story\\/show\\/" + pivotal_ids[1] + "([\\s]?)(\\([\\w\\-\\:\\s]+\\))?", "gi");
+  				var link_info = $(xml).find('current_state').text();
+  				if ($(xml).find('deadline').length > 0){
+  				  link_info = $(xml).find('deadline').text(); 
+  			  }
+  			  MonkeyPivotalBackground.gdoc = MonkeyPivotalBackground.gdoc.replace(r, 'https://www.pivotaltracker.com/story/show/' + pivotal_ids[1] + ' (' + link_info + ')');
+  				var r_restore = new RegExp("(href=\")https:\\/\\/www.pivotaltracker.com\\/story\\/show\\/" + pivotal_ids[1] + "([\\s]?)(\\([\\w\\-\\:\\s]+\\))?", "gi");
+  				MonkeyPivotalBackground.gdoc = MonkeyPivotalBackground.gdoc.replace(r_restore, 'href="https://www.pivotaltracker.com/story/show/' + pivotal_ids[1]);
+  				MonkeyPivotalBackground.global_counter++;
+  				MonkeyPivotalBackground.update_doc_iteration(is_new);
+        },
+        error: function(){
+          MonkeyPivotalBackground.global_counter++;
+  				MonkeyPivotalBackground.update_doc_iteration(is_new);
+        }
+      });
+			/*
 			$.getJSON('http://monkey.railsware.com/pivotal_story_status/' + pivotal_ids[1] + '.json', function(data) {
-				var r = new RegExp("https:\\/\\/www.pivotaltracker.com\\/story\\/show\\/" + pivotal_ids[1] + "([\\s]?)(\\([\\w\\-\\:\\s]+\\))?", "gi");
-				var link_info = data.story_status;
-				if (data.deadline){
-				  link_info = data.deadline; 
-			  }
-			  MonkeyPivotalBackground.gdoc = MonkeyPivotalBackground.gdoc.replace(r, 'https://www.pivotaltracker.com/story/show/' + pivotal_ids[1] + ' (' + link_info + ')');
-				var r_restore = new RegExp("(href=\")https:\\/\\/www.pivotaltracker.com\\/story\\/show\\/" + pivotal_ids[1] + "([\\s]?)(\\([\\w\\-\\:\\s]+\\))?", "gi");
-				MonkeyPivotalBackground.gdoc = MonkeyPivotalBackground.gdoc.replace(r_restore, 'href="https://www.pivotaltracker.com/story/show/' + pivotal_ids[1]);
-				MonkeyPivotalBackground.global_counter++;
-				MonkeyPivotalBackground.update_doc_iteration(is_new);
+				
 			});
+			*/
 		} else {
 		  chrome.browserAction.setBadgeText({'text': "..."});
 			if (is_new){

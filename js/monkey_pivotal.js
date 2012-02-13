@@ -55,22 +55,26 @@ var MonkeyPivotal = {
 	},
 	
 	begin_analyze: function(current_tab_url){
-		if (current_tab_url != null){
-			var regex_pattern = /^(http|https):\/\/([\w\.\/]+)\/document\/d\/([\w\.\-\_]+)\/(.*)/i;
-			if (regex_pattern.test(current_tab_url)){
-				var found_str = current_tab_url.match(regex_pattern);
-				if (found_str[3]){
-					this.bg_page.MonkeyPivotalBackground.doc_key = found_str[3];
-					this.download_gdocument(this.bg_page.MonkeyPivotalBackground.doc_key);
-				} else {
-					this.show_message('Please, open google document', 'notice');
-				}
-			} else {
-				this.show_message('Please, open google document', 'notice');
-			}
-		} else {
-			this.show_message('Please, open google document', 'notice');
-		}
+	  if (localStorage.pivotal_token != null && localStorage.pivotal_token.length > 0){
+  		if (current_tab_url != null){
+  			var regex_pattern = /^(http|https):\/\/([\w\.\/]+)\/document\/d\/([\w\.\-\_]+)\/(.*)/i;
+  			if (regex_pattern.test(current_tab_url)){
+  				var found_str = current_tab_url.match(regex_pattern);
+  				if (found_str[3]){
+  					this.bg_page.MonkeyPivotalBackground.doc_key = found_str[3];
+  					this.download_gdocument(this.bg_page.MonkeyPivotalBackground.doc_key);
+  				} else {
+  					this.show_message('Please, open google document', 'notice');
+  				}
+  			} else {
+  				this.show_message('Please, open google document', 'notice');
+  			}
+  		} else {
+  			this.show_message('Please, open google document', 'notice');
+  		}
+	  } else {
+	    this.show_message('Please, setup pivotal token in options', 'notice');
+	  }
 	},
 	
 	download_gdocument: function(key){
