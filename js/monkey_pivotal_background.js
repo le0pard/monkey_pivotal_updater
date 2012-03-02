@@ -84,11 +84,14 @@ var MonkeyPivotalBackground = {
 		  chrome.browserAction.setBadgeText({'text': "..."});
 			if (is_new){
 				this.update_message_on_popup("Creating new document...");
+				/*
 				if (MonkeyPivotalBackground.gdoc.length >= MonkeyPivotalBackground.MAX_DOC_LENGTH){
 				  this.create_resumable_gdocument();
 				} else {
           this.create_gdocument();
 				}
+				*/
+				this.create_resumable_gdocument();
 			} else {
 				this.update_message_on_popup("Updating document...");
         if (MonkeyPivotalBackground.gdoc.length >= MonkeyPivotalBackground.MAX_DOC_LENGTH){
